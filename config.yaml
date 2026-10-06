@@ -1,0 +1,84 @@
+# VRV TradePilot configuration.
+# POLL_INTERVAL_SECONDS in .env, if set, overrides poll_interval_seconds.
+
+poll_interval_seconds: 30
+
+# Optional local AI fallback (see README "Optional local AI extraction"). It is used only
+# when the PDF parser cannot reliably find a required field, and only if LOCAL_MODEL_ENABLED
+# =true in .env. It only reads values; the comparison is always deterministic.
+extraction:
+  use_local_model_fallback: true
+
+# Fields extracted from each PDF and compared.
+#   labels   : text that appears next to the value. Tried in order: most specific first.
+#              Quote labels containing "#" — otherwise YAML treats it as a comment.
+#   type     : string | integer | decimal | date
+#   required : true  -> missing in either PDF means REVIEW REQUIRED
+#              false -> compared only when found in both PDFs
+#   pattern  : optional regex the value must match. '.*\d.*' = "must contain a digit",
+#              so a heading like "PURCHASE ORDER CONFIRMATION" is never taken as a PO number.
+#   title    : name used in reply emails
+fields:
+
+  invoice_number:
+    title: Invoice Number
+    labels:
+      - Invoice Number
+      - Invoice No
+      - "Invoice #"
+    type: string
+    required: true
+    pattern: '.*\d.*'
+
+  po_number:
+    title: PO Number
+    labels:
+      - Purchase Order Number
+      - Purchase Order
+      - PO Number
+      - PO No
+      - "PO #"
+    type: string
+    required: true
+    pattern: '.*\d.*'
+
+  quantity:
+    title: Quantity
+    labels:
+      - Quantity
+      - Qty
+    type: integer
+    required: true
+
+  amount:
+    title: Amount
+    labels:
+      - Total Amount
+      - Amount
+      - Total
+    type: decimal
+    required: true
+
+  currency:
+    title: Currency
+    labels:
+      - Currency
+    type: string
+    required: false
+
+# Date formats accepted for fields of type "date" (Python strptime). Nothing else is parsed,
+# so dates are never guessed. Listing both %d/%m/%Y and %m/%d/%Y makes 03/04/2026 ambiguous,
+# which is then reported instead of guessed.
+date_formats:
+  - "%Y-%m-%d"
+  - "%d %B %Y"
+  - "%d %b %Y"
+  - "%d-%b-%Y"
+  - "%B %d, %Y"
+
+# Currency symbols mapped to codes (labels only — no currency conversion is ever done).
+currency_symbols:
+  "$": USD
+  "€": EUR
+  "£": GBP
+  "₹": INR
